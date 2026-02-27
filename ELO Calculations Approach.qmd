@@ -1,0 +1,25 @@
+---
+title: "5B ELO Calculations"
+format: html
+editor: visual
+---
+
+## Introduction 
+Looking at the final scores doesn't tell the full story. If a top-tier player scores 4 points against beginners, they actually had a bad day. But if a beginner scores 4 points against grandmasters, they had an amazing tournament. 
+
+To figure out who really did the best, I will be using the Elo Rating system. 
+
+## Approach
+
+My strategy for this analysis will be to turn player pre-ratings into a predictive model for the tournament. I will use the standard Elo logistic formula to determine the win probability for every single match in the dataset. 
+
+The formula assumes that if two players have the same rating, each has a 50% chance of winning. As the gap between ratings increase, the expected score for the higher-rated player will move closer to 1.0. 
+$$E = \frac{1}{1 + 10^{(R_{opp} - R_{player})/400}}$$
+"This calculation follows the standard logistic distribution developed by Arpad Elo (Elo, A. E. 1978. The Rating of Chessplayers, Past and Present)."
+ This is the formula I will use once I get the data inside of R. 
+
+For each player, the script will identify their seven opponents using their unique ID numbers from the original table. It will pull the pre-rating for each opponent, run the Elo formula for each game, and then sum those seven values.
+
+This will result in a new expected score variable for every player, representing the total points the math predicts they should have earned based on the strength of their schedule.
+
+Finally, I will calculate the difference between each players actual tournament points and their expected score. By sorting these differences, I can identify the five players who most exceeded expectations and the five who fell short. 
