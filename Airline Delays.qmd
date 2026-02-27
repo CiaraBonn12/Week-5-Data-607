@@ -1,0 +1,19 @@
+---
+title: "5A Airline Delays"
+format: html
+editor: visual
+---
+
+## Introduction
+The goal of this project is to practice essential skills in data science. Tidying and transforming a messy dataset. I am starting with a semi-structured table representing arrival delays for at least two airlines across five different cities.I will be transforming it from a wide format into a long format and filling in missing values to ensure every flight record is correctly attributed to its airline. 
+
+## Approach
+In order to transform the raw flight data into a structured format for analysis, I will be following a three-step process focusing on data integrity, tidying, and comparative analysis. 
+
+## Challenges
+
+The primary challenge is the missing data in the Airline column; the names "ALASKA" and "AM WEST" only appear on the "on time" rows. I will fix this by using the `fill()` function from the `tidyr` package to propagate the airline names downward into the empty cells. This will ensure that every row of data is correctly attributed to the proper airline.
+
+The next challenge is that the original table is wide, with five separate columnms for each city. While readable for humans, this structure prevents easy grouping and calculation. I will use `pivot_longer()` to collaspe the five city columns into a single columm called City. I will then use `pivot_wider()` to move the arrival statuses into their own colummns. This will result in a Tidy dataset where each row represents a unique observation for one city.
+
+I will calculate the delay rate for each airline globally and then perform a city-by-city comparison. I will create a grouped bar chart to visualize the percentages and they should allow me to investigate the overall delay trends for each individual city. 
