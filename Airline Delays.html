@@ -20,6 +20,41 @@ ul.task-list li input[type="checkbox"] {
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
 }
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
 </style>
 
 
@@ -66,7 +101,7 @@ ul.task-list li input[type="checkbox"] {
 
 <section id="introduction" class="level2">
 <h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
-<p>The goal of this project is to practice essential skills in data science. Tidying and transforming a messy dataset. I am starting with a semi-structured table representing arrival delays for at least two airlines across five different cities.I will be transforming it from a wide format into a long format and filling in missing values to ensure every flight record is correctly attributed to its airline.</p>
+<p>The goal of this project is to practice essential skills in data science. Tidying and transforming a messy dataset. I am starting with a semi-structured table representing arrival delays for at least two airlines across five different cities.I will be transforming it from a wide format into a long format and filling in missing values to ensure every flight record is correctly attributed to its airline. raw_data &lt;- read_csv(“https://raw.githubusercontent.com/YourName/YourRepo/main/airline_delays.csv”)</p>
 </section>
 <section id="approach" class="level2">
 <h2 class="anchored" data-anchor-id="approach">Approach</h2>
@@ -75,8 +110,108 @@ ul.task-list li input[type="checkbox"] {
 <section id="challenges" class="level2">
 <h2 class="anchored" data-anchor-id="challenges">Challenges</h2>
 <p>The primary challenge is the missing data in the Airline column; the names “ALASKA” and “AM WEST” only appear on the “on time” rows. I will fix this by using the <code>fill()</code> function from the <code>tidyr</code> package to propagate the airline names downward into the empty cells. This will ensure that every row of data is correctly attributed to the proper airline.</p>
-<p>The next challenge is that the original table is wide, with five separate columnms for each city. While readable for humans, this structure prevents easy grouping and calculation. I will use <code>pivot_longer()</code> to collaspe the five city columns into a single columm called City. I will then use <code>pivot_wider()</code> to move the arrival statuses into their own colummns. This will result in a Tidy dataset where each row represents a unique observation for one city.</p>
+<p>The next challenge is that the original table is wide, with five separate columnms for each city. While readable for humans, this structure prevents easy grouping and calculation. I will use <code>pivot_longer()</code> to collaspe the five city columns into a single columm called City. I will then use <code>pivot_wider()</code> to move the arrival statuses into their own columns. This will result in a Tidy dataset where each row represents a unique observation for one city.</p>
 <p>I will calculate the delay rate for each airline globally and then perform a city-by-city comparison. I will create a grouped bar chart to visualize the percentages and they should allow me to investigate the overall delay trends for each individual city.</p>
+</section>
+<section id="code-deliverable" class="level2">
+<h2 class="anchored" data-anchor-id="code-deliverable">Code Deliverable</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.0     ✔ readr     2.1.6
+✔ forcats   1.0.1     ✔ stringr   1.6.0
+✔ ggplot2   4.0.2     ✔ tibble    3.3.1
+✔ lubridate 1.9.4     ✔ tidyr     1.3.2
+✔ purrr     1.2.1     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb3"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>raw_data <span class="ot">&lt;-</span><span class="fu">tribble</span>(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a><span class="sc">~</span>airline, <span class="sc">~</span>status, <span class="sc">~</span>Los.Angeles, <span class="sc">~</span>Phoenix, <span class="sc">~</span>San.Diego, <span class="sc">~</span>San.Francisco, <span class="sc">~</span>Seattle,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a><span class="st">"ALASKA"</span>, <span class="st">"on time"</span>,<span class="dv">497</span>,           <span class="dv">221</span>,     <span class="dv">212</span>,        <span class="dv">503</span>,            <span class="dv">1841</span>,</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a><span class="cn">NA</span>,       <span class="st">"delayed"</span>, <span class="dv">62</span>,           <span class="dv">12</span>,      <span class="dv">20</span>,         <span class="dv">102</span>,            <span class="dv">305</span>,</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a><span class="cn">NA</span>,         <span class="cn">NA</span>,      <span class="cn">NA</span>,           <span class="cn">NA</span>,      <span class="cn">NA</span>,         <span class="cn">NA</span>,             <span class="cn">NA</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a><span class="st">"AM WEST"</span>,<span class="st">"on time"</span>, <span class="dv">694</span>,          <span class="dv">4840</span>,    <span class="dv">383</span>,        <span class="dv">320</span>,            <span class="dv">201</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a><span class="cn">NA</span>,       <span class="st">"delayed"</span>, <span class="dv">117</span>,         <span class="dv">415</span>,      <span class="dv">65</span>,         <span class="dv">129</span>,            <span class="dv">61</span>)</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(raw_data, <span class="st">"airline_delays.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>tidy_flights <span class="ot">&lt;-</span> raw_data <span class="sc">%&gt;%</span></span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(status))<span class="sc">%&gt;%</span></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">fill</span>(airline) <span class="sc">%&gt;%</span></span>
+<span id="cb3-13"><a href="#cb3-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(</span>
+<span id="cb3-14"><a href="#cb3-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">cols =</span> <span class="dv">3</span><span class="sc">:</span><span class="dv">7</span>,</span>
+<span id="cb3-15"><a href="#cb3-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_to =</span> <span class="st">"city"</span>,</span>
+<span id="cb3-16"><a href="#cb3-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_to =</span> <span class="st">"count"</span></span>
+<span id="cb3-17"><a href="#cb3-17" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-18"><a href="#cb3-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_wider</span>(</span>
+<span id="cb3-19"><a href="#cb3-19" aria-hidden="true" tabindex="-1"></a>    <span class="at">names_from =</span> status,</span>
+<span id="cb3-20"><a href="#cb3-20" aria-hidden="true" tabindex="-1"></a>    <span class="at">values_from =</span> count</span>
+<span id="cb3-21"><a href="#cb3-21" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb3-22"><a href="#cb3-22" aria-hidden="true" tabindex="-1"></a>  <span class="fu">rename</span>(<span class="at">on_time =</span> <span class="st">`</span><span class="at">on time</span><span class="st">`</span>)</span>
+<span id="cb3-23"><a href="#cb3-23" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb3-24"><a href="#cb3-24" aria-hidden="true" tabindex="-1"></a>  analysis <span class="ot">&lt;-</span> tidy_flights <span class="sc">%&gt;%</span></span>
+<span id="cb3-25"><a href="#cb3-25" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(</span>
+<span id="cb3-26"><a href="#cb3-26" aria-hidden="true" tabindex="-1"></a>      <span class="at">total =</span> on_time <span class="sc">+</span> delayed, </span>
+<span id="cb3-27"><a href="#cb3-27" aria-hidden="true" tabindex="-1"></a>      <span class="at">pct_delayed =</span> (delayed <span class="sc">/</span> total) <span class="sc">*</span> <span class="dv">100</span></span>
+<span id="cb3-28"><a href="#cb3-28" aria-hidden="true" tabindex="-1"></a>      )</span>
+<span id="cb3-29"><a href="#cb3-29" aria-hidden="true" tabindex="-1"></a>      </span>
+<span id="cb3-30"><a href="#cb3-30" aria-hidden="true" tabindex="-1"></a><span class="fu">print</span>(analysis)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 6
+   airline city          on_time delayed total pct_delayed
+   &lt;chr&gt;   &lt;chr&gt;           &lt;dbl&gt;   &lt;dbl&gt; &lt;dbl&gt;       &lt;dbl&gt;
+ 1 ALASKA  Los.Angeles       497      62   559       11.1 
+ 2 ALASKA  Phoenix           221      12   233        5.15
+ 3 ALASKA  San.Diego         212      20   232        8.62
+ 4 ALASKA  San.Francisco     503     102   605       16.9 
+ 5 ALASKA  Seattle          1841     305  2146       14.2 
+ 6 AM WEST Los.Angeles       694     117   811       14.4 
+ 7 AM WEST Phoenix          4840     415  5255        7.90
+ 8 AM WEST San.Diego         383      65   448       14.5 
+ 9 AM WEST San.Francisco     320     129   449       28.7 
+10 AM WEST Seattle           201      61   262       23.3 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Overall comparison </span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>overall_summary <span class="ot">&lt;-</span> analysis <span class="sc">%&gt;%</span></span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(airline) <span class="sc">%&gt;%</span></span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarize</span>(</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_on_time =</span> <span class="fu">sum</span>(on_time),</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">total_delayed =</span> <span class="fu">sum</span>(delayed),</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">overall_pct_delayed =</span> (<span class="fu">sum</span>(delayed) <span class="sc">/</span> (<span class="fu">sum</span>(on_time) <span class="sc">+</span> <span class="fu">sum</span>(delayed))) <span class="sc">*</span> <span class="dv">100</span>)</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a> <span class="fu">print</span>(overall_summary)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 4
+  airline total_on_time total_delayed overall_pct_delayed
+  &lt;chr&gt;           &lt;dbl&gt;         &lt;dbl&gt;               &lt;dbl&gt;
+1 ALASKA           3274           501                13.3
+2 AM WEST          6438           787                10.9</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(analysis, <span class="fu">aes</span>(<span class="at">x =</span> city, <span class="at">y =</span> pct_delayed, <span class="at">fill =</span> airline)) <span class="sc">+</span> <span class="fu">geom_bar</span>(<span class="at">stat =</span> <span class="st">"identity"</span>, <span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span> <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Delay Percentage by City"</span>, <span class="at">y =</span> <span class="st">"Percent Delayed"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="Airline-Delays_files/figure-html/unnamed-chunk-1-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="conclusion" class="level2">
+<h2 class="anchored" data-anchor-id="conclusion">Conclusion</h2>
+<p>While the bar chart shows thhat AM WEST appears to have a lower overall delay rate, a city-by-city breakdown reveals that ALASKA is actually more punctual in every individual location. AM WEST’s overall average is skewed by their high volume of flights in Phoenix, a low-delay city. This is an example of Simpsons Paradox.</p>
+</section>
+<section id="ai-collaboration-transcript" class="level2">
+<h2 class="anchored" data-anchor-id="ai-collaboration-transcript">AI Collaboration Transcript</h2>
+<p>I collaborated with Gemini 3 Flash as a technical “pair programmer.” My goal was to take a manually created dataset and apply a tidyverse workflow to analyze flight delays. I provided the initial logic and the raw data structure, while the AI assisted in debugging specific syntax errors and refining the data tidying process.</p>
+<p>Key Prompts and Assistance Provided Debugging Logic: I prompted the AI with code that was failing due to an “unexpected symbol” error. The AI identified that I had unbalanced parentheses in my summarize function and provided the corrected syntax.</p>
+<p>Data Tidying Strategy: I asked how to handle the empty airline cells in the raw data. The AI suggested using the fill() function to propagate the airline names into the NA rows, which was essential for correctly attributing the “delayed” counts.</p>
+<p>Statistical Analysis: I requested an explanation for why the city-by-city percentages contradicted the overall totals. The AI provided a breakdown of Simpson’s Paradox, explaining how the high volume of flights in Phoenix (for AM West) and Seattle (for Alaska) acted as a lurking variable that skewed the overall averages.</p>
+<p>Visualization Support: I asked how to improve the readability of my chart. The AI suggested using position = “dodge” in ggplot2 so that the airline performance could be compared side-by-side for each city.</p>
+<p>Conclusion and Citation While the AI assisted with syntax and theoretical explanations, I performed all code execution in RStudio and verified that the results matched the assignment requirements. I interpreted the final visualization and drafted the conclusion based on the output provided by the R script. Google. (2026). Gemini 3 Flash [Large language model]. https://gemini.google.com/</p>
 </section>
 
 </main>

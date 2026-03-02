@@ -6,6 +6,7 @@ editor: visual
 
 ## Introduction
 The goal of this project is to practice essential skills in data science. Tidying and transforming a messy dataset. I am starting with a semi-structured table representing arrival delays for at least two airlines across five different cities.I will be transforming it from a wide format into a long format and filling in missing values to ensure every flight record is correctly attributed to its airline. 
+raw_data <- read_csv("https://raw.githubusercontent.com/YourName/YourRepo/main/airline_delays.csv")
 
 ## Approach
 In order to transform the raw flight data into a structured format for analysis, I will be following a three-step process focusing on data integrity, tidying, and comparative analysis. 
@@ -14,6 +15,75 @@ In order to transform the raw flight data into a structured format for analysis,
 
 The primary challenge is the missing data in the Airline column; the names "ALASKA" and "AM WEST" only appear on the "on time" rows. I will fix this by using the `fill()` function from the `tidyr` package to propagate the airline names downward into the empty cells. This will ensure that every row of data is correctly attributed to the proper airline.
 
-The next challenge is that the original table is wide, with five separate columnms for each city. While readable for humans, this structure prevents easy grouping and calculation. I will use `pivot_longer()` to collaspe the five city columns into a single columm called City. I will then use `pivot_wider()` to move the arrival statuses into their own colummns. This will result in a Tidy dataset where each row represents a unique observation for one city.
+The next challenge is that the original table is wide, with five separate columnms for each city. While readable for humans, this structure prevents easy grouping and calculation. I will use `pivot_longer()` to collaspe the five city columns into a single columm called City. I will then use `pivot_wider()` to move the arrival statuses into their own columns. This will result in a Tidy dataset where each row represents a unique observation for one city.
 
 I will calculate the delay rate for each airline globally and then perform a city-by-city comparison. I will create a grouped bar chart to visualize the percentages and they should allow me to investigate the overall delay trends for each individual city. 
+
+## Code Deliverable
+
+```{r}
+library(tidyverse)
+raw_data <-tribble(
+~airline, ~status, ~Los.Angeles, ~Phoenix, ~San.Diego, ~San.Francisco, ~Seattle,
+"ALASKA", "on time",497,           221,     212,        503,            1841,
+NA,       "delayed", 62,           12,      20,         102,            305,
+NA,         NA,      NA,           NA,      NA,         NA,             NA,
+"AM WEST","on time", 694,          4840,    383,        320,            201,
+NA,       "delayed", 117,         415,      65,         129,            61)
+write.csv(raw_data, "airline_delays.csv", row.names = FALSE)
+
+tidy_flights <- raw_data %>%
+  filter(!is.na(status))%>%
+  fill(airline) %>%
+  pivot_longer(
+    cols = 3:7,
+    names_to = "city",
+    values_to = "count"
+  ) %>%
+  pivot_wider(
+    names_from = status,
+    values_from = count
+  ) %>%
+  rename(on_time = `on time`)
+  
+  analysis <- tidy_flights %>%
+    mutate(
+      total = on_time + delayed, 
+      pct_delayed = (delayed / total) * 100
+      )
+      
+print(analysis)
+
+# Overall comparison 
+overall_summary <- analysis %>%
+  group_by(airline) %>%
+  summarize(
+    total_on_time = sum(on_time),
+    total_delayed = sum(delayed),
+    overall_pct_delayed = (sum(delayed) / (sum(on_time) + sum(delayed))) * 100)
+
+ print(overall_summary)
+
+ggplot(analysis, aes(x = city, y = pct_delayed, fill = airline)) + geom_bar(stat = "identity", position = "dodge") + labs(title = "Delay Percentage by City", y = "Percent Delayed")
+
+```
+## Conclusion 
+
+While the bar chart shows thhat AM WEST appears to have a lower overall delay rate, a city-by-city breakdown reveals that ALASKA is actually more punctual in every individual location. AM WEST's overall average is skewed by their high volume of flights in Phoenix, a low-delay city. This is an example of Simpsons Paradox.
+
+## AI Collaboration Transcript
+
+I collaborated with Gemini 3 Flash as a technical "pair programmer." My goal was to take a manually created dataset and apply a tidyverse workflow to analyze flight delays. I provided the initial logic and the raw data structure, while the AI assisted in debugging specific syntax errors and refining the data tidying process.
+
+Key Prompts and Assistance Provided
+Debugging Logic: I prompted the AI with code that was failing due to an "unexpected symbol" error. The AI identified that I had unbalanced parentheses in my summarize function and provided the corrected syntax.
+
+Data Tidying Strategy: I asked how to handle the empty airline cells in the raw data. The AI suggested using the fill() function to propagate the airline names into the NA rows, which was essential for correctly attributing the "delayed" counts.
+
+Statistical Analysis: I requested an explanation for why the city-by-city percentages contradicted the overall totals. The AI provided a breakdown of Simpson's Paradox, explaining how the high volume of flights in Phoenix (for AM West) and Seattle (for Alaska) acted as a lurking variable that skewed the overall averages.
+
+Visualization Support: I asked how to improve the readability of my chart. The AI suggested using position = "dodge" in ggplot2 so that the airline performance could be compared side-by-side for each city.
+
+Conclusion and Citation
+While the AI assisted with syntax and theoretical explanations, I performed all code execution in RStudio and verified that the results matched the assignment requirements. I interpreted the final visualization and drafted the conclusion based on the output provided by the R script.
+ Google. (2026). Gemini 3 Flash [Large language model]. https://gemini.google.com/
