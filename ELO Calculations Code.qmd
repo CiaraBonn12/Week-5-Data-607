@@ -1,0 +1,121 @@
+---
+title: "5B ELO Calculations"
+format: html
+editor: visual
+---
+
+## Introduction 
+Looking at the final scores doesn't tell the full story. If a top-tier player scores 4 points against beginners, they actually had a bad day. But if a beginner scores 4 points against grandmasters, they had an amazing tournament. 
+
+To figure out who really did the best, I will be using the Elo Rating system. 
+
+## Approach
+
+My strategy for this analysis will be to turn player pre-ratings into a predictive model for the tournament. I will use the standard Elo logistic formula to determine the win probability for every single match in the dataset. 
+
+The formula assumes that if two players have the same rating, each has a 50% chance of winning. As the gap between ratings increase, the expected score for the higher-rated player will move closer to 1.0. 
+$$E = \frac{1}{1 + 10^{(R_{opp} - R_{player})/400}}$$
+"This calculation follows the standard logistic distribution developed by Arpad Elo (Elo, A. E. 1978. The Rating of Chessplayers, Past and Present)."
+ This is the formula I will use once I get the data inside of R. 
+
+For each player, the script will identify their seven opponents using their unique ID numbers from the original table. It will pull the pre-rating for each opponent, run the Elo formula for each game, and then sum those seven values.
+
+This will result in a new expected score variable for every player, representing the total points the math predicts they should have earned based on the strength of their schedule.
+
+Finally, I will calculate the difference between each players actual tournament points and their expected score. By sorting these differences, I can identify the five players who most exceeded expectations and the five who fell short. 
+
+## Code Deliverable
+```{r}
+library(tidyverse)
+library(stringr)
+
+# 1. Read and Clean
+raw_lines <- read_lines("tournamentinfo.txt")
+
+# FIXED QUOTES HERE: [^-]{5,} is now inside double quotes
+clean_lines <- raw_lines[str_detect(raw_lines, "[^-]{5,}")]
+clean_lines <- clean_lines[-(1:2)] 
+
+# 2. Split Rows
+row1 <- clean_lines[seq(1, length(clean_lines), 2)]
+row2 <- clean_lines[seq(2, length(clean_lines), 2)]
+
+# 3. Extract Data
+# Use tibble instead of data.frame to allow for list-columns
+chess_df <- tibble(
+  player_id = as.numeric(str_extract(row1, "\\d+")),
+  # Fixed: Trim extra spaces more aggressively
+  player_name = str_trim(str_extract(row1, "(?<=\\| ).*?(?=\\|)")),
+  
+  # IMPROVED REGEX for points: Look for any digits and a decimal between pipes
+  total_points = as.numeric(str_extract(row1, "(?<=\\|)\\s*\\d+\\.\\d\\s*(?=\\|)")),
+  
+  # Pulling the Pre-Rating
+  pre_rating = as.numeric(str_extract(row2, "(?<=R: )\\s*\\d+")),
+  
+  # Extracting opponent IDs
+  opponents = str_extract_all(row1, "(?<=[WLD]  )\\s*\\d+")
+)
+
+# Preview the data
+print(chess_df)
+```
+```{r}
+# Calculate Expected Scores
+chess_analysis <- chess_df %>%
+  rowwise() %>%
+  mutate(
+    # Convert opponent IDs to numbers and find their ratings in the main table
+    opp_ids = list(as.numeric(unlist(opponents))),
+    opp_ratings = list(chess_df$pre_rating[opp_ids]),
+    
+    # Apply your Elo Formula to each opponent rating
+    expected_score = sum(1 / (1 + 10^((unlist(opp_ratings) - pre_rating) / 400)), na.rm = TRUE),
+    
+    # Calculate the Difference (The "Performance" Metric)
+    performance_delta = total_points - expected_score
+  ) %>%
+  ungroup()
+
+# View the results
+print(chess_analysis %>% select(player_name, total_points, expected_score, performance_delta))
+
+# Identify the 5 players who most exceeded expectations
+top_5_over <- chess_analysis %>%
+  arrange(desc(performance_delta)) %>%
+  head(5) %>%
+  select(player_name, pre_rating, total_points, expected_score, performance_delta)
+
+# Identify the 5 players who fell furthest below expectations
+bottom_5_under <- chess_analysis %>%
+  arrange(performance_delta) %>%
+  head(5) %>%
+  select(player_name, pre_rating, total_points, expected_score, performance_delta)
+
+print("TOP 5 OVERPERFORMERS (High Strength of Schedule vs Score)")
+print(top_5_over)
+
+print("TOP 5 UNDERPERFORMERS (Low Score vs Expected)")
+print(bottom_5_under)
+```
+
+## Conclusion 
+The Overperformers like players Aditya and Jacob have a lower `pre_rating` value but high `total_points`. The `performance_delta` proves they were "punching up" and winning against much stronger opponents. The Underperformers like Loren, the Elo model had expectations for him to score 6.28 based on his 1745 rating. His negative delta tells the story of a not so good match for him. 
+
+## AI Usage & Collaboration Disclosure: Chess Elo Analysis
+Summary of Interaction
+I utilized Gemini 3 Flash to assist with the complex data extraction and calculation phases of the Chess Tournament analysis. The AI acted as a consultant for Regular Expressions (Regex) and functional programming in R.
+
+Key Assistance Provided
+Regex Pattern Matching: I prompted the AI to help extract specific data from a multi-line text file. The AI provided regex patterns (like (?<=R: )) to pull ratings and names from messy strings where standard delimiters weren't available.
+
+Data Structure Troubleshooting: When my code threw an error about "differing number of rows," the AI explained that str_extract_all returns list-columns. It guided me to switch from data.frame() to tibble() to support these complex structures.
+
+Mathematical Implementation: The AI helped translate the Elo logistic formula into a vectorized R function (1 / (1 + 10^((opp_ratings - player_rating) / 400))), ensuring the logic properly calculated the "Expected Score" across all seven rounds of the tournament.
+
+Debugging NA values: When my point totals were returning NA, the AI helped me refine the regex to account for extra white space in the raw text file.
+
+Conclusion and Citation
+The core strategy (using Elo to find overperformers) was my original approach. The AI provided the technical bridge to execute that strategy in R. I verified all calculations by checking the performance_delta outputs against the raw tournament results.
+
+Citation: Google. (2026). Gemini 3 Flash (Version 3.0) [Large language model]. https://gemini.google.com/
